@@ -36,6 +36,7 @@ public class Rotta {
 		this.nVoli = nVoli;
 	}
 	
-	
+	//Come per le adiacenze, non mi servono i metodi hashCode e equals() perché non dovrò mai confrontare
+	//rotte tra loro, mi servono solo per recuperare i dati dal DB.
 	
 }

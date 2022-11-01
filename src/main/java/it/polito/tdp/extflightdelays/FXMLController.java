@@ -45,10 +45,11 @@ public class FXMLController {
     void doAnalizzaAeroporti(ActionEvent event) {
     	txtResult.clear();
     	
+    	//Recupero l'input con il solito pattern.
     	int x;
     	
     	try {
-    		x = Integer.parseInt(compagnieMinimo.getText());
+    		x = Integer.parseInt(compagnieMinimo.getText());	//Prendo il risultato dal textfield e provo a convertirlo in intero.
     	} catch (NumberFormatException e) {
     		txtResult.appendText("Inserire valore numerico");
     		return;
@@ -59,8 +60,8 @@ public class FXMLController {
     	txtResult.appendText("# VERTICI: " + this.model.nVertici() + "\n");
     	txtResult.appendText("# ARCHI: " + this.model.nArchi());
     	
-    	cmbBoxAeroportoPartenza.getItems().addAll(this.model.getVertici());
-    	cmbBoxAeroportoDestinazione.getItems().addAll(this.model.getVertici());
+    	cmbBoxAeroportoPartenza.getItems().addAll(this.model.getVertici());		//Riempio le due tendine con tutti gli aeroporti (vertici del grafo). Ricordarsi il getItems() per passare da oggetti di codice a oggetti di interfaccia.
+    	cmbBoxAeroportoDestinazione.getItems().addAll(this.model.getVertici());	//Ho riempito le tendine con i codici dell'aeroporto ordinati alfabeticamente.
     }
 
     @FXML
@@ -72,6 +73,7 @@ public class FXMLController {
     		return ;
     	}
     	
+    	//Provo a stampare a console un percorso.
     	List<Airport> percorso = this.model.getPercorso(cmbBoxAeroportoPartenza.getValue(), cmbBoxAeroportoDestinazione.getValue());
     	
     	if(percorso == null) {

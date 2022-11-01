@@ -39,6 +39,7 @@ public class ExtFlightDelaysDAO {
 		}
 	}
 
+	//Ho modificato il metodo del DAO per farmi caricare gli aeroporti nella mappa invece che farmi restituire una lista.
 	public void loadAllAirports(Map<Integer,Airport> idMap) {
 		String sql = "SELECT * FROM airports";
 
@@ -49,10 +50,12 @@ public class ExtFlightDelaysDAO {
 
 			while (rs.next()) {
 				
+				//Questa if serve a fare in modo che io carichi l'aeroporto nella mappa soltanto se già non è stato caricato. IMPORTANTE.
 				if(!idMap.containsKey(rs.getInt("ID"))) {
 					Airport airport = new Airport(rs.getInt("ID"), rs.getString("IATA_CODE"), rs.getString("AIRPORT"),
 						rs.getString("CITY"), rs.getString("STATE"), rs.getString("COUNTRY"), rs.getDouble("LATITUDE"),
 						rs.getDouble("LONGITUDE"), rs.getDouble("TIMEZONE_OFFSET"));
+					//Inserisco nella mappa l'aeroporto con il suo ID e il suo oggetto stesso.
 					idMap.put(airport.getId(), airport);
 				}
 
@@ -96,12 +99,18 @@ public class ExtFlightDelaysDAO {
 		}
 	}
 	
+	//Devo creare un nuovo metodo nel DAO che mi restituisca una lista di vertici filtrati in base al numero di compagnie aeree in cui sono coinvolti.
+	//Devo passare al metodo come parametro anche la mappa perché io dalla query recupero gli ID e tramite la mappa dagli id passo agli oggetti che poi inserisco nella lista.
 	public List<Airport> getVertici(int x, Map<Integer,Airport> idMap){
-		String sql = "SELECT a.id "
+		
+		String sql = "SELECT a.id "																//Selezionare gli id degli aeroporti.
 				+ "FROM airports a, flights f "
-				+ "WHERE (a.id = f.ORIGIN_AIRPORT_ID OR a.id = f.DESTINATION_AIRPORT_ID) "
-				+ "GROUP BY a.id "
-				+ "HAVING COUNT(DISTINCT (f.AIRLINE_ID)) >= ?";
+				+ "WHERE (a.id = f.ORIGIN_AIRPORT_ID OR a.id = f.DESTINATION_AIRPORT_ID) "		//Dove l'id dell'aeroporto è uguale o all'id dell'aeroporto di partenza della tabella volo o a quello di arrivo della tabella volo.
+				+ "GROUP BY a.id "																//Raggruppati in ordine di id. Ricorda: la tabella volo fornisce come parametri quali sono l'aeroporto di partenza e quello di arrivo del volo. Io so che un volo è coinvolo in una compagnia aerea se un volo parte OPPURE arriva a quell'aeroporto, quindi devo contarli entrambi.
+				+ "HAVING COUNT(DISTINCT (f.AIRLINE_ID)) >= ?";									//Avendo una somma di DIFFERENTI compagnie aeree superiore a x fornito dall'utente.
+		
+		//Io quindi voglio sostanzialmente ottenere aeroporti da cui partano voli o arrivino voli e che abbiano al loro interno almeno x compagnie aeree diverse, che siano punti di partenza oppure punti di arrivo (se un aeroporto è punto di partenza per 5 compagnie e punto di arrivo per 6 e x = 10, io inserisco quell'aeroporto.
+		
 		List<Airport> result = new ArrayList<Airport> ();
 		
 		try {
@@ -111,7 +120,7 @@ public class ExtFlightDelaysDAO {
 			ResultSet rs = st.executeQuery();
 			
 			while (rs.next()) {
-				result.add(idMap.get(rs.getInt("id")));
+				result.add(idMap.get(rs.getInt("id")));	//Noi inseriamo degli aeroporti presi dalla mappa di identità dove gli id sono uguali a quelli trovati come risultato dalla query del Database.
 			}
 			
 			conn.close();
@@ -122,11 +131,12 @@ public class ExtFlightDelaysDAO {
 			throw new RuntimeException("Error Connection Database");
 		}
 	}
-
+	//Il metodo getRotte() ha bisogno come parametro della idMap perché devo poter recuperare l'oggetto aeroporto dall'id degli aeroporti
+	//In questo caso io posso recuperarmi le rotte dalla tabella flights, selezionando l'aeroporto di partenza e arrivo e conto i voli (conto tutto, non più le compagnie).
 	public List<Rotta> getRotte(Map<Integer, Airport> idMap) {
 		String sql = "SELECT f.ORIGIN_AIRPORT_ID as a1, f.DESTINATION_AIRPORT_ID as a2, COUNT(*) AS n "
 				+ "FROM flights f "
-				+ "GROUP BY f.ORIGIN_AIRPORT_ID, f.DESTINATION_AIRPORT_ID";
+				+ "GROUP BY f.ORIGIN_AIRPORT_ID, f.DESTINATION_AIRPORT_ID";	//Raggruppo i voli per sorgente e destinazione
 		List<Rotta> result = new ArrayList<Rotta>();
 		
 		try {
@@ -135,10 +145,10 @@ public class ExtFlightDelaysDAO {
 			ResultSet rs = st.executeQuery();
 			
 			while(rs.next()) {
-				Airport sorgente = idMap.get(rs.getInt("a1"));
+				Airport sorgente = idMap.get(rs.getInt("a1"));			//Recupero i due oggetti Aeroporto
 				Airport destinazione = idMap.get(rs.getInt("a2"));
 				
-				if(sorgente != null && destinazione != null) {
+				if(sorgente != null && destinazione != null) {			//Se i due oggetti non sono nulli, creo la rotta e l'aggiungo alla lista. Se il Database fosse stata manipolata e la rotta non fosse più presente. Un altro controllo sull'integrità del database.
 					result.add(new Rotta(sorgente, destinazione, rs.getInt("n")));
 				}
 				
